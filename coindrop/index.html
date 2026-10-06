@@ -1,0 +1,163 @@
+<!-- 別の場で調整してから上げてるので変にはならないと思ってる -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      html, body, .container {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+
+      .overlay-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;        
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 4px;
+        border: none;
+        background-color: #f0f0ff;
+      }
+
+      .details {
+        position: absolute;
+        top: 80px;
+        left: 20px;
+        z-index: 2;
+        cursor: pointer;
+        height: auto;
+        gap: 10px;
+      }
+
+      .input {
+        border-radius: 3px;
+        background-color: #ff00ff;
+        border: none;
+        font-size: 1em;
+        width: 10vw;
+        height: 2vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <canvas width="1000" height="500" id="canvas"></canvas>
+      <button id="clear" class="overlay-button">画面をクリア</button>
+      <details class="details" id="details">
+        <summary>設定</summary>
+        重力: <input type="number" placeholder="値を入力" value="1" id="gravity" class="input"><br>
+        跳ね返り: <input type="number" placeholder="値を入力" value="-0.8" id="bounce" class="input">
+<br>
+        摩擦: <input type="number" placeholder="値を入力" value="0.95" id="friction" class="input"><br>
+        空気抵抗: <input type="number" placeholder="値を入力" value="0.98" id="airresis" class="input"><br>
+        サイズ: <input type="number" placeholder="値を入力" value="100" id="size" class="input"><br>
+        横方向への倍率: <input type="number" placeholder="値を入力" value="1" id="vx" class="input"><br>
+      </details>
+    </div>
+    <script>
+      const canvas = document.getElementById("canvas")
+      const ctx = canvas.getContext("2d")
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let coins = [];
+
+      document.getElementById('clear').addEventListener('click', () => {
+        coins = []
+      });
+
+      const img = new Image();
+      img.src = 'https://illust8.com/wp-content/uploads/2018/11/gold-coin_illust_2205.png';
+
+      class coin {
+        constructor(x, y, gravity, bounce, friction, airresis, vx, size) {
+          this.x = x
+          this.y = y
+          this.gravity = gravity
+          this.bounce = bounce
+          this.friction = friction
+          this.airresis = airresis
+          this.vx = (Math.random() - 0.5) * 6 * vx
+          this.vy = 0
+          this.size = size
+          this.half = this.size / 2
+        }
+
+        update() {
+          this.vy += this.gravity
+          this.vx *= this.airresis
+          this.x += this.vx
+          this.y += this.vy
+          if (this.y > canvas.height - this.half) {
+            this.y = canvas.height - this.half
+            this.vy *= this.bounce
+            this.vx *= this.friction
+          }
+
+          /*
+          if (this.vy > 1.5) {
+            const sound = new Audio("https://soundeffect-lab.info/sound/various/mp3/money-drop1.mp3");
+            sound.play();
+          }
+          */
+          
+          if (this.x > canvas.width - this.half || this.x < this.half) {
+            this.vx *= -1
+          }
+
+          if (this.x > canvas.width - this.half) {
+            this.x = canvas.width - this.half
+          }
+
+          if (this.x < this.half) {
+            this.x = this.half
+          }
+
+          ctx.drawImage(img, this.x - this.half, this.y - this.half, this.size, this.size);
+        }
+      }
+
+      window.addEventListener("mousedown", (c) => {
+        if (c.target.id !== 'canvas') return;
+        const clientx = c.clientX
+        const clienty = c.clientY
+        const gravity = parseFloat(document.getElementById("gravity").value)
+        const bounce = parseFloat(document.getElementById("bounce").value)
+        const friction = parseFloat(document.getElementById("friction").value)
+        const airresis = parseFloat(document.getElementById("airresis").value)
+        const vx = parseFloat(document.getElementById("vx").value)
+        const size = parseFloat(document.getElementById("size").value)
+        coins.push(new coin(clientx, clienty, gravity, bounce, friction, airresis, vx, size))
+      })
+
+      function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        coins.forEach(coin => {
+          coin.update()
+        });
+
+        requestAnimationFrame(update);
+      }
+
+      img.onload = () => { update() }
+    </script>
+  </body>
+</html>
